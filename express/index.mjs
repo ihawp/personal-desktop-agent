@@ -3,6 +3,7 @@ import ollama from 'ollama';
 import { configDotenv } from 'dotenv';
 import { fileURLToPath } from 'url';
 import path, { dirname } from 'node:path';
+import cors from 'cors';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -11,37 +12,46 @@ configDotenv({ debug: true });
 
 const app = express();
 
-app.get('/api/ai', async (req, res) => {
+app.use(cors());
+app.use(express.json());
 
-    // serve some ai response.
+app.post('/api/chat', async (req, res) => {
+    const userPrompt = req.body.chat;
 
-    const { content } = req.body ?? 'What is 9*10?';
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
 
-    const response = await ollama.chat({
-        model: 'gemma3:latest',
-        messages: [{
-            role: 'user',
-            content: content + '. ENSURE ALL RESULTS ARE KEPT STRAIGHTFORWARD, ACADEMIC.',
-        }],
-        stream: true,
-        keep_alive: "5m",
-    });
+    try {
+        // ollama.chat returns async iterator when stream: true
+        const stream = await ollama.chat({
+            model: 'gemma3:latest',
+            messages: [{ role: 'user', content: userPrompt }],
+            stream: true,
+        });
 
-    const thing = Array();
-
-    for await (const part of response) {
-        console.log(part);
-        thing.push(part.message.content);
+        for await (const chunk of stream) {
+        // chunk might be like: { message: { content: 'partial text' } }
+        if (chunk.message?.content) {
+            // Send SSE formatted message
+            res.write(`${chunk.message.content.replace(/\n/g, '\\n')}\n\n`);
+        }
+        }
+    } catch (err) {
+        console.error('Ollama stream error:', err);
+        res.write(`event: error\ndata: ${JSON.stringify(err.message)}\n\n`);
+    } finally {
+        res.write('event: end\ndata: [DONE]\n\n');
+        res.end();
     }
-
-    res.status(200).json({ success: true, thing });
 });
 
-app.use(express.static(path.join(__dirname, '../', 'website')))
+app.use(express.static(path.join(__dirname, '../', 'website', 'dist')))
 app.get('/', (req, res) => {
 
     // serve some static files
-    res.sendFile(path.join(__dirname, '../', 'website', 'index.html'));
+    res.sendFile(path.join(__dirname, '../', 'website', 'dist', 'index.html'));
 
 });
 

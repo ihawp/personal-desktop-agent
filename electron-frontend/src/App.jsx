@@ -1,35 +1,101 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from 'react';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [chatInput, setChatInput] = useState('');
+  const [chatOutput, setChatOutput] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+  const submitChat = event => {
+    event.preventDefault();
+
+    setLoading(true);
+
+    if (!chatInput) return;
+    doFetch(chatInput);
+  };
+
+  function cleanChunk(text) {
+    return text
+      // Normalize curly apostrophes and quotes to straight.
+      .replace(/[‘’]/g, "'")
+      .replace(/[“”]/g, '"')
+
+      // Remove all newline characters (you can replace with space if you want).
+      .replace(/\n+/g, ' ')
+
+      // Fix spacing around punctuation (no space before, one space after).
+      .replace(/\s*([.,:;!?()\[\]{}-])\s*/g, (m, p) => p + ' ')
+
+      // Fix spacing around markdown bold/italic (don't break formatting).
+      .replace(/\s*\*\*(.*?)\*\*\s*/g, '**$1**')
+      .replace(/\s*\*(.*?)\*\s*/g, '*$1*')
+
+      // Collapse multiple spaces to single space.
+      .replace(/ {2,}/g, ' ')
+
+      // Trim leading/trailing spaces.
+      .trim();
+  }
+
+  const doFetch = async (chat) => {
+    setChatOutput(''); // clear old output
+
+    try {
+      const response = await fetch(import.meta.env.VITE_SERVER_URL + 'api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ chat }),
+      });
+
+      if (!response.ok) throw new Error('Server error');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      let done = false;
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+
+        if (value) {
+          let chunk = decoder.decode(value);
+          chunk = cleanChunk(chunk);
+
+          if (chunk.done_reason) {
+            console.log('done reason', chunk.done_reason);
+            return;
+          }
+
+          setChatOutput(prev => prev + chunk + ' ');
+        }
+      }
+
+    } catch (error) {
+      console.error('Fetch error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return <>
+    <h1>Make an AI request</h1>
+
+    <form onSubmit={submitChat}>
+      <input
+        type="text"
+        name="chat"
+        value={chatInput}
+        onChange={e => setChatInput(e.target.value)}
+      />
+      <button type="submit">Send</button>
+    </form>
+
+    <pre>
+      {chatOutput}
+    </pre>
+  </>;
 }
 
-export default App
+export default App;

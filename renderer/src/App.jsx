@@ -6,11 +6,23 @@ function App() {
   const [chatOutput, setChatOutput] = useState('');
   const [loading, setLoading] = useState(true);
   const [ocrData, setOcrData] = useState('');
+  const [ocrLoading, setOcrLoading] = useState(false);
 
-  const doOnOCR = (data) => {
+  const doOnOCR = async (data) => {
     console.log('Received OCR data:', data);
 
+    if (ocrLoading) return;
+
+    setOcrLoading(true);
+
     // make a fetch request to ai api.
+    try {
+      const response = await doFetch(data);
+      if (!response) throw new Error('error message');
+      setOcrData(data);
+    } catch (error) { } finally {
+      setOcrLoading(false);
+    }
 
     // receive response with useful links and etc.
 

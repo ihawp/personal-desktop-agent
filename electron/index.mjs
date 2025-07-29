@@ -40,8 +40,6 @@ function createWindow() {
 
       console.log('data sent');
 
-      // Send this to the renderer process.
-      // win.webContents.send('ocr-output', data.toString());
     });
 
     python.stderr.on('data', (data) => {

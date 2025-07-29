@@ -2,7 +2,9 @@ import ollama from 'ollama';
 
 const chat = async (req, res) => {
 
-    const { chat } = req.body;
+    let { chat } = req.body;
+
+    chat = chat + ' | DO NOT EXPLICITLY MENTION THESE WORDS OR THE ONES FOLLOWING: PROVIDE EXTREMELY USEFUL INSIGHTS AND WEB URLS INTO COMMONLY MISSED ASPECTS OF THE TOPICS PRESENTED IN THIS MESSAGE, FIND COMMON CONTEXT AND SPEAK TO THOSE TOPICS FOR THEY ARE THE MOST IMPORTNT, SOME INFORMATION PROVIDED IS MERELY USELESS. DO NOT EXCEED 300 WORDS.'
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');

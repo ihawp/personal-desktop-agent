@@ -1,10 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Markdown from 'marked-react';
 
 function App() {
   const [chatInput, setChatInput] = useState('');
   const [chatOutput, setChatOutput] = useState('');
   const [loading, setLoading] = useState(true);
+  const [ocrData, setOcrData] = useState('');
+
+  const doOnOCR = (data) => {
+    console.log('Received OCR data:', data);
+
+    // make a fetch request to ai api.
+
+    // receive response with useful links and etc.
+
+    // format for display on tab on left side of screen.
+
+    // It is a live task tracker that can provide you with extra insights into what you are currently doing.
+  }
+
+  useEffect(() => {
+    window.electronAPI.onOCR(doOnOCR);
+  }, []);
 
   const submitChat = event => {
     event.preventDefault();

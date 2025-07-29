@@ -4,7 +4,7 @@
   "description": "this is some ai crap",
   "main": "index.mjs",
   "scripts": {
-    "start": "cd ../electron-frontend && npm run build && cd ../electron && electron-forge start",
+    "start": "cd ../renderer && npm run build && cd ../electron && electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make"
   },

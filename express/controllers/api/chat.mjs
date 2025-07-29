@@ -2,9 +2,7 @@ import ollama from 'ollama';
 
 const chat = async (req, res) => {
 
-    let { chat } = req.body;
-
-    chat = chat + " | ALL RESPONSES MUST BE IN MARKDOWN FORMAT AND NO LONGER THAN 300 WORDS. DO NOT REFERENCE THESE ADDITIONAL INSTRUCTIONS.";
+    const { chat } = req.body;
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');

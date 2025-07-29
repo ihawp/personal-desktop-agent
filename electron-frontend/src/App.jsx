@@ -49,7 +49,7 @@ function App() {
   }
 
   const doFetch = async (chat) => {
-    setChatOutput(''); // clear old output
+    setChatOutput('');
 
     try {
       const response = await fetch(import.meta.env.VITE_SERVER_URL + 'api/chat', {
@@ -90,27 +90,35 @@ function App() {
     }
   };
 
-  return <>
-    <h1>Make an AI request</h1>
-
-    { chatOutput ? <button onClick={ copyToClipboard }>Copy</button> : ''}
-
-    <button onClick={ console.log(chatOutput) }>Log Output</button>
-
-    <form onSubmit={submitChat}>
-      <input
+  return <div className="flex flex-col">
+    <form 
+      onSubmit={submitChat} 
+      className="font-large flex flex-row justify-center fixed bottom-0 left-0 w-full z-[9999] bg-white"
+    >
+      <textarea
         type="text"
         name="chat"
         value={chatInput}
-        onChange={e => setChatInput(e.target.value)}
+        className="p-2 border-blue-600 border-[2px] border-solid text-blue-600 resize-none w-full"
+        onChange={event => setChatInput(prev => event.target.value)}
       />
-      <button type="submit">Send</button>
+
+      <button 
+        type="submit"
+        className="py-2 px-3 bg-blue-600 text-white cursor-pointer border-blue-600 border-solid border-[2px]"
+      >Send</button>
     </form>
 
-    <Markdown className={"flex flex-col w-full"}>
-      {chatOutput}
-    </Markdown>
-  </>;
+    <div className="relative p-4 pt-8 pb-24">
+      { chatOutput ? <button 
+        className="absolute top-0 right-0 cursor-pointer bg-gray-500 text-white" 
+        onClick={ copyToClipboard }
+      >Copy</button> : ''}
+      <Markdown className="w-full">
+        {chatOutput}
+      </Markdown>
+    </div>
+  </div>;
 }
 
 export default App;

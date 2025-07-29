@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Markdown from 'marked-react';
 
 function App() {
   const [chatInput, setChatInput] = useState('');
@@ -13,6 +14,16 @@ function App() {
     if (!chatInput) return;
     doFetch(chatInput);
   };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(chatOutput);
+      alert('Copied to clipboard.');
+    } catch (error) {
+      alert('Not copied to clipboard.');
+      console.error(error);
+    }
+  }
 
   function cleanChunk(text) {
     return text
@@ -82,6 +93,10 @@ function App() {
   return <>
     <h1>Make an AI request</h1>
 
+    { chatOutput ? <button onClick={ copyToClipboard }>Copy</button> : ''}
+
+    <button onClick={ console.log(chatOutput) }>Log Output</button>
+
     <form onSubmit={submitChat}>
       <input
         type="text"
@@ -92,9 +107,9 @@ function App() {
       <button type="submit">Send</button>
     </form>
 
-    <pre>
+    <Markdown className={"flex flex-col w-full"}>
       {chatOutput}
-    </pre>
+    </Markdown>
   </>;
 }
 

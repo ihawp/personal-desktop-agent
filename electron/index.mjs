@@ -1,9 +1,5 @@
 import { app, BrowserWindow } from 'electron';
-import { fileURLToPath } from 'url';
-import path, { dirname } from 'node:path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import path from 'node:path';
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -22,13 +18,24 @@ function createWindow() {
     skipTaskbar: false,
     devTools: true,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(app.getAppPath(), 'preload.js'),
       contextIsolation: false,
     },
   });
 
-  win.loadFile(path.join(__dirname, '../', 'electron-frontend', 'dist', 'index.html'));
+  if (app.isPackaged) {
+    // For prod environment.
+    const indexPath = path.join(app.getAppPath(), 'dist', 'index.html');
+    win.loadFile(indexPath);
+  } else {
+    // For dev environment.
+    const indexPath = path.join(app.getAppPath(), '../', 'electron-frontend', 'dist', 'index.html');
+    win.loadFile(indexPath);
+  }
 }
+
+app.setAsDefaultProtocolClient('ihawp');
+app.setAppUserModelId('com.ihawp.AiCrap');
 
 app.whenReady().then(() => {
     createWindow();

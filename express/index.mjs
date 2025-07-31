@@ -1,5 +1,5 @@
 import express from 'express';
-import { configDotenv } from 'dotenv';
+import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import path, { dirname } from 'node:path';
 import cors from 'cors';
@@ -9,7 +9,7 @@ import authRouter from './routers/authRouter.mjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-configDotenv({ debug: true });
+dotenv.config();
 
 const app = express();
 

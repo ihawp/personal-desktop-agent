@@ -4,56 +4,56 @@ import cv2
 import pytesseract
 import time
 from Levenshtein import ratio
+# import os
+# print(os.environ)
+# something = os.getenv("SOMETHING", "")
 
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
-# Set this to your monitor (usually 1 is primary)
-MONITOR_INDEX = 1
-
-# Set capture region (optional)
-REGION = {
-    "top": 100,       # Y position
-    "left": 0,      # X position
-    "width": 1920,
-    "height": 980
-}
-
-# OCR loop
 def main():
+
     with mss.mss() as sct:
-        monitor = sct.monitors[MONITOR_INDEX]
+        print(f"Detected monitors: {len(sct.monitors)-1}")  # monitors[0] is all combined.
+
+        print(f"wow {"cool"}")
+
+        last_texts = {}  # Store last text per monitor.
+
         print("Starting screen OCR... Press Ctrl+C to stop.")
 
-        last_text = ""
-        
         try:
             while True:
-                screenshot = sct.grab(REGION if REGION else monitor)
-                frame = np.array(screenshot)
+                for i, monitor in enumerate(sct.monitors[1:], start=1):  # skip monitors[0], full screen.
+                    # Use full monitor area or define a REGION here if you want a crop.
+                    region = {
+                        "top": monitor["top"],
+                        "left": monitor["left"],
+                        "width": monitor["width"],
+                        "height": monitor["height"]
+                    }
 
-                # Preprocess: grayscale.
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                    screenshot = sct.grab(region)
+                    frame = np.array(screenshot)
 
-                # Thresholding to improve OCR accuracy.
-                gray = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)[1]
+                    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                    gray = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)[1]
 
-                # OCR.
-                text = pytesseract.image_to_string(gray)
+                    text = pytesseract.image_to_string(gray)
 
-                if (ratio(text, object.last_text) < 0.95):
-                    
-                    # Save text for comparison.
-                    last_text = text
+                    # Compare with previous OCR text for this monitor.
+                    if i not in last_texts or ratio(text, last_texts[i]) < 0.95:
+                        last_texts[i] = text
+                        print(f"--- Monitor {i} ---")
+                        print(text.strip())
+                        print("-" * 40)
 
-                    # Output the result.
-                    print("-" * 40)
-                    print(text.strip())
-
-                # Wait a moment (throttle capture rate).
                 time.sleep(1)
 
         except KeyboardInterrupt:
             print("OCR stopped.")
+
+        except:
+            print("OCR def stopped.")
 
 if __name__ == "__main__":
     main()

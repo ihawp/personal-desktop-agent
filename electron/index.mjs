@@ -1,6 +1,8 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, MessageChannelMain } from 'electron';
 import path from 'node:path';
 import { spawn } from 'child_process';
+import dotenv from 'dotenv';
+dotenv.config();
 
 function createWindow() {
 
@@ -27,14 +29,51 @@ function createWindow() {
       },
     });
 
-    // Spawn the window.
+    // Create a MessageChannel equivalent.
+    const { port1, port2 } = new MessageChannelMain();
+
+    // Keep port 2 here for sending messages between the processes 
+      // without interupting the main thread.
+    port2.postMessage({ success: true });
+
+    win.once('ready-to-show', () => {
+      win.webContents.postMessage('port', null, [port2]);
+    });
+
+    port1.on('message', (event) => {
+      console.log({ event });
+    });
+
+    // Load the React frontend to the BrowserWindow.
     const indexPath = path.join(app.getAppPath(), 'renderer', 'index.html');
     win.loadFile(indexPath);
 
-    // Spawn the OCR script.
-    const python = spawn('python', [path.join(app.getAppPath(), 'python', 'live_ocr.py')]);
+    // Spawn the non-malicious keylogger.
+    /*
+    const keylogger = spawn('python', [path.join(app.getAppPath(), 'python', 'key_logger.py')]);
 
-    python.stdout.on('data', (data) => {
+    keylogger.stdout.on('data', (data) => {
+      console.log('this is keylogged', data);
+    });
+
+    keylogger.stderr.on('data', (data) => {
+      // log error.
+      console.log('keylogger error', data);
+    });
+
+    keylogger.on('close', (code) => {
+      // log end of script life.
+      console.log('Keylogged closed.', code);
+    });
+    */
+
+    // Spawn the OCR script.
+    /*
+    const ocr = spawn('python', [path.join(app.getAppPath(), 'python', 'live_ocr.py')], {
+      env: process.env,
+    });
+
+    ocr.stdout.on('data', (data) => {
 
       win.webContents.send('ocr-data', data.toString());
 
@@ -42,13 +81,16 @@ function createWindow() {
 
     });
 
-    python.stderr.on('data', (data) => {
+    ocr.stderr.on('data', (data) => {
       // log error.
+      console.log('ocr error', data);
     });
 
-    python.on('close', (code) => {
-      // log end of app life.
+    ocr.on('close', (code) => {
+      // log end of script life.
+      console.log('ocr closed.', code);
     });
+    */
 }
 
 app.setAsDefaultProtocolClient('ihawp');

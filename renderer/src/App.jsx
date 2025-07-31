@@ -7,6 +7,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [ocrData, setOcrData] = useState('');
   const [ocrLoading, setOcrLoading] = useState(false);
+  const [port, setPort] = useState(null);
 
   const doOnOCR = async (data) => {
     console.log('Received OCR data:', data);
@@ -20,7 +21,7 @@ function App() {
       const response = await doFetch(data);
       if (!response) throw new Error('error message');
       setOcrData(data);
-    } catch (error) { } finally {
+    } catch (error) {  } finally {
       setOcrLoading(false);
     }
 
@@ -31,8 +32,21 @@ function App() {
     // It is a live task tracker that can provide you with extra insights into what you are currently doing.
   }
 
+  const doOnPort = (event) => {
+
+    window.port = event.ports;
+
+
+
+    window.port.onmessage = messageEvent => {
+      console.log(messageEvent);
+    }
+
+  }
+
   useEffect(() => {
-    window.electronAPI.onOCR(doOnOCR);
+    // window.electronAPI.onOCR(doOnOCR);
+    window.electronAPI.onPort(doOnPort);
   }, []);
 
   const submitChat = event => {
@@ -103,12 +117,15 @@ function App() {
           let chunk = decoder.decode(value);
           chunk = cleanChunk(chunk);
 
+          console.log({ chunk });
+
+          setChatOutput(prev => prev + chunk);
+
           if (chunk.done_reason) {
             console.log('done reason', chunk.done_reason);
+            done = true;
             return;
           }
-
-          setChatOutput(prev => prev + chunk + ' ');
         }
       }
 
@@ -129,7 +146,7 @@ function App() {
         name="chat"
         value={chatInput}
         className="p-2 border-blue-600 border-[2px] border-solid text-blue-600 resize-none w-full"
-        onChange={event => setChatInput(prev => event.target.value)}
+        onChange={event => setChatInput(event.currentTarget.value)}
       />
 
       <button 
@@ -138,7 +155,7 @@ function App() {
       >Send</button>
     </form>
 
-    <div className="relative p-4 pt-8 pb-24">
+    <div className="relative p-4 pt-8 pb-24 w-full">
       { chatOutput ? <button 
         className="absolute top-0 right-0 cursor-pointer bg-gray-500 text-white" 
         onClick={ copyToClipboard }
